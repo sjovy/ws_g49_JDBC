@@ -12,6 +12,47 @@ public class CityDaoJDBC implements CityDao {
     }
 
     @Override
+    public int addCity(City city) {
+        int id = getMaxId() + 1;
+        String SQL_INSERT = "INSERT INTO city (ID, Name, CountryCode, District, Population) VALUES (?, ?, ?, ?, ?)";
+
+        try (PreparedStatement preparedStatement = connection.prepareStatement(SQL_INSERT)) {
+            preparedStatement.setInt(1, id);
+            preparedStatement.setString(2, city.getName());
+            preparedStatement.setString(3, city.getCountryCode());
+            preparedStatement.setString(4, city.getDistrict());
+            preparedStatement.setInt(5, city.getPopulation());
+
+            int affectedRows = preparedStatement.executeUpdate();
+
+            if (affectedRows == 0) {
+                id = 0;
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return id;
+    }
+
+    private int getMaxId() {
+        int maxId = 0;
+        String SQL_MAX_ID = "SELECT MAX(ID) FROM city";
+
+        try (Statement statement = connection.createStatement();
+             ResultSet resultSet = statement.executeQuery(SQL_MAX_ID)) {
+
+            if (resultSet.next()) {
+                maxId = resultSet.getInt(1);
+            }
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+
+        return maxId;
+    }
+
+    @Override
     public List<City> findAll() {
         List<City> cities = new ArrayList<>();
         String SQL_FIND_ALL = "SELECT * FROM city";
@@ -45,12 +86,13 @@ public class CityDaoJDBC implements CityDao {
             ResultSet resultSet = preparedStatement.executeQuery();
 
             if (resultSet.next()) {
+                int cityId = resultSet.getInt("ID");
                 String name = resultSet.getString("Name");
                 String countryCode = resultSet.getString("CountryCode");
                 String district = resultSet.getString("District");
                 int population = resultSet.getInt("Population");
 
-                city = new City(id, name, countryCode, district, population);
+                city = new City(cityId, name, countryCode, district, population);
             }
         } catch (SQLException e) {
             e.printStackTrace();
